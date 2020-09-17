@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"math"
 	"os"
 )
 
@@ -11,6 +12,45 @@ type Color struct {
 	r float64
 	g float64
 	b float64
+}
+
+func (a Color) add(b Color) Color {
+	a.r += b.r
+	a.g += b.g
+	a.b += b.b
+
+	return a
+}
+
+func (a Color) sub(b Color) Color {
+	a.r -= b.r
+	a.g -= b.g
+	a.b -= b.b
+
+	return a
+}
+
+func (a Color) scalarMult(b float64) Color {
+	a.r *= b
+	a.g *= b
+	a.b *= b
+
+	return a
+}
+
+func (a Color) mult(b Color) Color {
+	a.r *= b.r
+	a.g *= b.g
+	a.b *= b.b
+	return a
+}
+
+func (a Color) sqrt() Color {
+	a.r = math.Sqrt(a.r)
+	a.g = math.Sqrt(a.g)
+	a.b = math.Sqrt(a.b)
+
+	return a
 }
 
 func CreateCanvas(width int, height int) [][]Color {
@@ -31,6 +71,7 @@ func GeneratePng(canvas [][]Color, filename string) {
 
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
+
 			r := uint8(canvas[x][y].r * 255.999)
 			g := uint8(canvas[x][y].g * 255.999)
 			b := uint8(canvas[x][y].b * 255.999)
@@ -38,7 +79,7 @@ func GeneratePng(canvas [][]Color, filename string) {
 		}
 	}
 
-	f, _ := os.Create("image.png")
+	f, _ := os.Create(filename)
 	png.Encode(f, img)
 
 }
