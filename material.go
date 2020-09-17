@@ -22,6 +22,23 @@ func (d Dielectric) scatter(r *Ray, hit *HitRec, c *Color, scattered *Ray) bool 
 	} else {
 		eta = d.index
 	}
+
+	cosTheta := r.dir.normalize().scalarMult(-1).dot(hit.normal)
+	sinTheta := math.Sqrt(1.0 - cosTheta*cosTheta)
+
+	if eta*sinTheta > 1.0 {
+		reflected := reflect(r.dir.normalize(), hit.normal)
+		(*scattered) = Ray{hit.point, reflected}
+		return true
+	}
+
+	reflectProb := schlick(cosTheta, eta)
+	if rand.Float64() < reflectProb {
+		reflected := reflect(r.dir.normalize(), hit.normal)
+		(*scattered) = Ray{hit.point, reflected}
+		return true
+	}
+
 	refracted := refract(r.dir.normalize(), hit.normal, eta)
 	(*scattered) = Ray{hit.point, refracted}
 	return true
@@ -81,7 +98,13 @@ func reflect(v Vector, n Vector) Vector {
 
 func refract(uv, n Vector, index float64) Vector {
 	cosTheta := uv.scalarMult(-1).dot(n)
+
 	out_perp := uv.add(n.scalarMult(cosTheta)).scalarMult(index)
 	out_parallel := n.scalarMult(-1 * math.Sqrt(math.Abs(1.0-out_perp.lengthSquared())))
 	return out_perp.add(out_parallel)
+}
+
+func schlick(cosine, ref float64) float64 {
+	r0 := math.Pow((1-ref)/(1+ref), 2)
+	return r0 + (1-r0)*math.Pow(1-cosine, 5)
 }
