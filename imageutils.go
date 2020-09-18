@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"image/png"
 	"math"
+	"math/rand"
 	"os"
 )
 
@@ -51,6 +52,10 @@ func (a Color) sqrt() Color {
 	a.b = math.Sqrt(a.b)
 
 	return a
+}
+
+func randomColor() Color {
+	return Color{rand.Float64(), rand.Float64(), rand.Float64()}
 }
 
 func CreateCanvas(width int, height int) [][]Color {

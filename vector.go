@@ -62,3 +62,12 @@ func randomUnitVector() Vector {
 	r := math.Sqrt(1 - z*z)
 	return Vector{r * math.Cos(a), r * math.Sin(a), z}
 }
+
+func randomDiskVector() Vector {
+	for {
+		p := Vector{rand.Float64()*2 - 1, rand.Float64()*2 - 1, 0}
+		if p.lengthSquared() < 1 {
+			return p
+		}
+	}
+}
