@@ -58,12 +58,33 @@ func randomColor() Color {
 	return Color{rand.Float64(), rand.Float64(), rand.Float64()}
 }
 
+//TODO make canvas struct?
 func CreateCanvas(width int, height int) [][]Color {
 	image := make([][]Color, width)
 	for i := range image {
 		image[i] = make([]Color, height)
 	}
 	return image
+}
+
+func addCanvas(a, b [][]Color) [][]Color {
+	final := CreateCanvas(len(a), len(a[0]))
+	//TODO: check sizes first
+	for i := 0; i < len(a); i++ {
+		for j := 0; j < len(a[0]); j++ {
+			final[i][j] = a[i][j].add(b[i][j])
+		}
+	}
+	return final
+}
+
+func multCanvas(a [][]Color, n float64) [][]Color {
+	for i := 0; i < len(a); i++ {
+		for j := 0; j < len(a[0]); j++ {
+			a[i][j] = a[i][j].scalarMult(n)
+		}
+	}
+	return a
 }
 
 func GeneratePng(canvas [][]Color, filename string) {
