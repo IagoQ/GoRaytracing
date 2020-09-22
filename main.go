@@ -2,21 +2,19 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"time"
 )
 
 func main() {
-
 	fmt.Println("Starting up...")
 	//scene
-	height := 700
-	width := 700
+	height := 500
+	width := 500
 	aspect := float64(width) / float64(height)
-	samples := 100
-	maxdepth := 20
-	from := Vector{13, 2, 3}
-	to := Vector{0, 0, 0}
+	samples := 10
+	maxdepth := 5
+	from := Vector{1, 13, 0}
+	to := Vector{2, 2, 2}
 
 	//multithreading
 	cores := samples
@@ -26,7 +24,17 @@ func main() {
 	//camera
 	c := CreateCamera(aspect, 50.0, from, to, Vector{0, 1, 0}, 0.1, 10)
 	//world
-	w := randomScene()
+
+	p1 := Vector{1, 1, 1}
+	p2 := Vector{4, 4, 4}
+	p3 := Vector{1, 4, 4}
+	mat := Matte{1, Color{0.2, 0.8, 0.5}}
+
+	w := CreateWorld()
+	w.add(CreateTriangle(p3, p2, p1, mat))
+	// w.add(Sphere{p1, 0.5, mat})
+	// w.add(Sphere{p2, 0.5, mat})
+	// w.add(Sphere{p3, 0.5, mat})
 	//render
 
 	inputChannel := make(chan Scene, bufferSize)
@@ -57,35 +65,4 @@ func main() {
 
 	GeneratePng(final, "image.png")
 
-}
-
-func randomScene() World {
-	var w World
-	groundMaterial := Matte{0.98, Color{0.5, 0.5, 0.5}}
-	w.add(Sphere{Vector{0, 1000, 0}, 1000, groundMaterial})
-
-	for a := -11; a < 11; a++ {
-		for b := -11; b < 11; b++ {
-			matc := rand.Float64()
-			radius := rand.Float64() / 2.0
-			center := Vector{float64(a) + 0.9*rand.Float64(), radius, float64(b) + 0.9*rand.Float64()}
-
-			if center.sub(Vector{4, 0.2, 0}).length() > 0.9 {
-				if matc < 0.4 {
-					smat := Matte{0.98, randomColor()}
-					w.add(Sphere{center, radius, smat})
-				} else if matc < 0.8 {
-					mcolor := Color{1, 1, 1}.sub(randomColor().scalarMult(0.3))
-					mmat := FuzzyMirror{rand.Float64() / 8, mcolor}
-					w.add(Sphere{center, radius, mmat})
-				} else {
-					w.add(Sphere{center, radius, Dielectric{1.5, Color{1, 1, 1}}})
-				}
-			}
-		}
-	}
-	w.add(Sphere{Vector{0, 1, 0.2}, 1, Dielectric{1.5, Color{1, 1, 1}}})
-	w.add(Sphere{Vector{-4, 1, 0}, 1, Matte{0.99, Color{0.4, 0.2, 0.1}}})
-	w.add(Sphere{Vector{4, 1, -0.2}, 1, Mirror{Color{0.9, 0.9, 0.9}}})
-	return w
 }

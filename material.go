@@ -76,7 +76,6 @@ func (m Matte) scatter(r *Ray, hit *HitRec, c *Color, scattered *Ray) bool {
 	}
 	*c = Color{0, 0, 0}
 	return false
-
 }
 
 type Mirror struct {
