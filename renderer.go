@@ -6,7 +6,7 @@ import (
 
 type Scene struct {
 	width, height, samples, depth int
-	world                         World
+	world                         Shape
 	camera                        Camera
 }
 
@@ -37,7 +37,8 @@ func raycolor(r Ray, s Shape, depth int) Color {
 
 	var scattered Ray
 	var attenuation Color
-	if s.hit(r, &hit, 0.001, 100) {
+	min, max := 0.001, 100.0
+	if s.hit(r, &hit, min, max) {
 		if (*hit.material).scatter(&r, &hit, &attenuation, &scattered) {
 			return attenuation.mult(raycolor(scattered, s, depth-1))
 		}

@@ -4,6 +4,11 @@ import (
 	"math"
 )
 
+type Shape interface {
+	hit(Ray, *HitRec, float64, float64) bool
+	bb() boundingbox
+}
+
 type World struct {
 	shapes []Shape
 }
@@ -12,26 +17,26 @@ func CreateWorld() World {
 	return World{}
 }
 
-func (w World) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
-	var temprec HitRec
-	hit := false
-	closest := tmax
-	for _, s := range w.shapes {
-		if s.hit(r, &temprec, tmin, closest) {
-			hit = true
-			closest = temprec.t
-			(*rec) = temprec
-		}
-	}
-	return hit
+// func (w World) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
+// 	var temprec HitRec
+// 	hit := false
+// 	closest := tmax
+// 	for i := 0; i < len(w.shapes); i++ {
+// 		if w.shapes[i].hit(r, &temprec, tmin, closest) {
+// 			hit = true
+// 			closest = temprec.t
+// 			(*rec) = temprec
+// 		}
+// 	}
+// 	return hit
+// }
+
+func (w World) bb() boundingbox {
+	return boundingbox{Vector{0, 0, 0}, Vector{0, 0, 0}}
 }
 
 func (w *World) add(s Shape) {
 	w.shapes = append(w.shapes, s)
-}
-
-type Shape interface {
-	hit(Ray, *HitRec, float64, float64) bool
 }
 
 type Triangle struct {
@@ -56,15 +61,15 @@ func (tri Triangle) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
 	pvec := r.dir.cross(edge2)
 	det := edge1.dot(pvec)
 
-	//culling
-	if det < 0.00001 {
-		return false
-	}
-
-	// not culling
-	// if math.Abs(det) < 0.00001 {
+	// culling
+	// if det < 0.00001 {
 	// 	return false
 	// }
+
+	// not culling
+	if math.Abs(det) < 0.00001 {
+		return false
+	}
 
 	invDet := 1.0 / det
 
@@ -92,6 +97,16 @@ func (tri Triangle) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
 	rec.t = t
 
 	return true
+}
+
+func (t Triangle) bb() boundingbox {
+	minx := min(t.p1.x, min(t.p2.x, t.p3.x))
+	miny := min(t.p1.y, min(t.p2.y, t.p3.y))
+	minz := min(t.p1.z, min(t.p2.z, t.p3.z))
+	maxx := max(t.p1.x, max(t.p2.x, t.p3.x))
+	maxy := max(t.p1.y, max(t.p2.y, t.p3.y))
+	maxz := max(t.p1.z, max(t.p2.z, t.p3.z))
+	return boundingbox{Vector{minx, miny, minz}, Vector{maxx, maxy, maxz}}
 }
 
 type Sphere struct {
@@ -134,4 +149,8 @@ func (s Sphere) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
 		}
 	}
 	return false
+}
+
+func (s Sphere) bb() boundingbox {
+	return boundingbox{s.pos.sub(Vector{s.r, s.r, s.r}), s.pos.add(Vector{s.r, s.r, s.r})}
 }
