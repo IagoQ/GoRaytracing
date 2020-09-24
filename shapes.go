@@ -9,36 +9,6 @@ type Shape interface {
 	bb() boundingbox
 }
 
-type World struct {
-	shapes []Shape
-}
-
-func CreateWorld() World {
-	return World{}
-}
-
-// func (w World) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
-// 	var temprec HitRec
-// 	hit := false
-// 	closest := tmax
-// 	for i := 0; i < len(w.shapes); i++ {
-// 		if w.shapes[i].hit(r, &temprec, tmin, closest) {
-// 			hit = true
-// 			closest = temprec.t
-// 			(*rec) = temprec
-// 		}
-// 	}
-// 	return hit
-// }
-
-func (w World) bb() boundingbox {
-	return boundingbox{Vector{0, 0, 0}, Vector{0, 0, 0}}
-}
-
-func (w *World) add(s Shape) {
-	w.shapes = append(w.shapes, s)
-}
-
 type Triangle struct {
 	p1, p2, p3, normal Vector
 	m                  Material

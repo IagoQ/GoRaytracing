@@ -1,74 +1,66 @@
 package main
 
 import (
+	"math/rand"
 	"sort"
 )
 
+// bvh definition
+
 type bvh struct {
-	left    Shape
-	right   Shape
-	box     boundingbox
-	isempty bool
+	shapes []Shape
+	left   *Shape
+	right  *Shape
+	box    boundingbox
 }
 
-func CreateBvh(shapelist []Shape, depth int) Shape {
+func CreateBvh(shapelist []Shape, start, end int) Shape {
+	b := bvh{}
 
-	if len(shapelist) == 0 {
-		return bvh{isempty: true}
-	}
-	if len(shapelist) == 1 {
-		left := shapelist[0]
-		right := bvh{isempty: true}
-		bb := left.bb()
-		return bvh{left, right, bb, false}
-	}
-	if len(shapelist) == 2 {
-		left := shapelist[0]
-		right := shapelist[1]
-		bb := combinebb(left.bb(), right.bb())
-		return bvh{left, right, bb, false}
+	span := end - start
+
+	if span == 1 {
+		b.left = &shapelist[start]
+		b.right = &shapelist[start]
+	} else if span == 2 {
+		b.left = &shapelist[start]
+		b.right = &shapelist[start+1]
+	} else {
+
+		// sort shapes by random axis
+		axisr := rand.Float64()
+		if axisr < 0.33 {
+			sort.Slice(shapelist[start:end], func(i, j int) bool { return shapelist[i].bb().min.x < shapelist[j].bb().min.x })
+		} else if axisr < 0.66 {
+			sort.Slice(shapelist[start:end], func(i, j int) bool { return shapelist[i].bb().min.y < shapelist[j].bb().min.y })
+		} else {
+			sort.Slice(shapelist[start:end], func(i, j int) bool { return shapelist[i].bb().min.y < shapelist[j].bb().min.y })
+		}
+
+		mid := start + span/2
+		l := CreateBvh(shapelist, start, mid)
+		r := CreateBvh(shapelist, mid, end)
+		b.left = &l
+		b.right = &r
 	}
 
-	//sort shapes by alternating axis
-	if depth%3 == 0 {
-		sort.Sort(ByX(shapelist))
-	}
-	if depth%3 == 1 {
-		sort.Sort(ByY(shapelist))
-	}
-	if depth%3 == 2 {
-		sort.Sort(ByZ(shapelist))
-	}
-
-	half := len(shapelist) / 2
-
-	left := CreateBvh(shapelist[0:half], depth+1)
-	right := CreateBvh(shapelist[half:], depth+1)
-	bb := combinebb(left.bb(), right.bb())
-
-	return bvh{left, right, bb, false}
-
-}
-func (t bvh) bb() boundingbox {
-	return t.box
+	b.box = combinebb((*b.left).bb(), (*b.right).bb())
+	return b
 }
 
-func (t bvh) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
-
-	if t.isempty {
+func (b bvh) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
+	if !b.box.hit(r, rec, tmin, tmax) {
 		return false
 	}
-
-	if !t.box.hit(r, rec, tmin, tmax) {
-		return false
-	}
-	lefthit := t.left.hit(r, rec, tmin, tmax)
-	if lefthit {
-		return true
-	}
-	righthit := t.right.hit(r, rec, tmin, tmax)
-	return righthit
+	lefthit := (*b.left).hit(r, rec, tmin, tmax)
+	righthit := (*b.right).hit(r, rec, tmin, tmax)
+	return lefthit || righthit
 }
+func (b bvh) bb() boundingbox {
+	return b.box
+}
+
+// bounding box defintion
 
 type boundingbox struct {
 	min, max Vector
@@ -86,64 +78,79 @@ func combinebb(b1, b2 boundingbox) boundingbox {
 }
 
 func (bb boundingbox) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
-	// ugly code, refactor wouldnt be too much prettier, open for better ideas
-	var t0, t1 float64
-	t0 = min(bb.min.x-(r.orig.x)/r.dir.x, bb.max.x-(r.orig.x)/r.dir.x)
-	t1 = max(bb.min.x-(r.orig.x)/r.dir.x, bb.max.x-(r.orig.x)/r.dir.x)
-	tmin = max(t0, tmin)
-	tmax = max(t1, tmax)
-	if tmin >= tmax {
+	// x axis
+	invDet := 1.0 / r.dir.x
+	t0 := (bb.min.x - r.orig.x) * invDet
+	t1 := (bb.max.x - r.orig.x) * invDet
+	if invDet < 0 {
+		t0, t1 = t1, t0
+	}
+	if t0 > tmin {
+		tmin = t0
+	}
+	if t1 < tmax {
+		tmax = t1
+	}
+	if tmax <= tmin {
 		return false
 	}
-	t0 = min(bb.min.y-(r.orig.y)/r.dir.y, bb.max.y-(r.orig.y)/r.dir.y)
-	t1 = max(bb.min.y-(r.orig.y)/r.dir.y, bb.max.y-(r.orig.y)/r.dir.y)
-	tmin = max(t0, tmin)
-	tmax = max(t1, tmax)
-	if tmin >= tmax {
+	//y axis
+	invDet = 1.0 / r.dir.y
+	t0 = (bb.min.y - r.orig.y) * invDet
+	t1 = (bb.max.y - r.orig.y) * invDet
+	if invDet < 0 {
+		t0, t1 = t1, t0
+	}
+	if t0 > tmin {
+		tmin = t0
+	}
+	if t1 < tmax {
+		tmax = t1
+	}
+	if tmax <= tmin {
 		return false
 	}
-	t0 = min(bb.min.z-(r.orig.z)/r.dir.z, bb.max.z-(r.orig.z)/r.dir.z)
-	t1 = max(bb.min.z-(r.orig.z)/r.dir.z, bb.max.z-(r.orig.z)/r.dir.z)
-	tmin = max(t0, tmin)
-	tmax = max(t1, tmax)
-	if tmin >= tmax {
+	//z axis
+	invDet = 1.0 / r.dir.z
+	t0 = (bb.min.z - r.orig.z) * invDet
+	t1 = (bb.max.z - r.orig.z) * invDet
+	if invDet < 0 {
+		t0, t1 = t1, t0
+	}
+	if t0 > tmin {
+		tmin = t0
+	}
+	if t1 < tmax {
+		tmax = t1
+	}
+	if tmax <= tmin {
 		return false
 	}
 	return true
 
-}
+	// ugly code, refactor wouldnt be too much prettier, open for better ideas
+	// var t0, t1 float64
+	// t0 = min(bb.min.x-(r.orig.x)/r.dir.x, bb.max.x-(r.orig.x)/r.dir.x)
+	// t1 = max(bb.min.x-(r.orig.x)/r.dir.x, bb.max.x-(r.orig.x)/r.dir.x)
+	// tmin = max(t0, tmin)
+	// tmax = max(t1, tmax)
+	// if tmin >= tmax {
+	// 	return false
+	// }
+	// t0 = min(bb.min.y-(r.orig.y)/r.dir.y, bb.max.y-(r.orig.y)/r.dir.y)
+	// t1 = max(bb.min.y-(r.orig.y)/r.dir.y, bb.max.y-(r.orig.y)/r.dir.y)
+	// tmin = max(t0, tmin)
+	// tmax = max(t1, tmax)
+	// if tmin >= tmax {
+	// 	return false
+	// }
+	// t0 = min(bb.min.z-(r.orig.z)/r.dir.z, bb.max.z-(r.orig.z)/r.dir.z)
+	// t1 = max(bb.min.z-(r.orig.z)/r.dir.z, bb.max.z-(r.orig.z)/r.dir.z)
+	// tmin = max(t0, tmin)
+	// tmax = max(t1, tmax)
+	// if tmin >= tmax {
+	// 	return false
+	// }
+	// return true
 
-// Order shape slices by axis (from bb min vector)
-
-type ByX []Shape
-
-func (a ByX) Len() int      { return len(a) }
-func (a ByX) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a ByX) Less(i, j int) bool {
-	if a[i] == nil || a[j] == nil {
-		return false
-	}
-	return a[i].bb().min.x < a[j].bb().min.x
-}
-
-type ByY []Shape
-
-func (a ByY) Len() int      { return len(a) }
-func (a ByY) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a ByY) Less(i, j int) bool {
-	if a[i] == nil || a[j] == nil {
-		return false
-	}
-	return a[i].bb().min.y < a[j].bb().min.y
-}
-
-type ByZ []Shape
-
-func (a ByZ) Len() int      { return len(a) }
-func (a ByZ) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a ByZ) Less(i, j int) bool {
-	if a[i] == nil || a[j] == nil {
-		return false
-	}
-	return a[i].bb().min.z < a[j].bb().min.z
 }
