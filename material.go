@@ -5,8 +5,28 @@ import (
 	"math/rand"
 )
 
+// TODO: add texture to materials
+
 type Material interface {
 	scatter(*Ray, *HitRec, *Color, *Ray) bool
+	emmited(float64, float64, Vector) Color
+}
+
+type Diffuselight struct {
+	c Color
+}
+
+func (dl Diffuselight) emmited(u, v float64, p Vector) Color {
+	return dl.c
+}
+
+func (dl Diffuselight) scatter(r *Ray, hit *HitRec, c *Color, scattered *Ray) bool {
+
+	// scatterdir := hit.normal.add(randomUnitVector())
+	// *scattered = Ray{hit.point, scatterdir}
+	// *c = dl.c
+	return false
+
 }
 
 type Dielectric struct {
@@ -44,6 +64,10 @@ func (d Dielectric) scatter(r *Ray, hit *HitRec, c *Color, scattered *Ray) bool 
 	return true
 }
 
+func (d Dielectric) emmited(u, v float64, p Vector) Color {
+	return Color{0, 0, 0}
+}
+
 type FuzzyMirror struct {
 	fuzzy float64
 	c     Color
@@ -59,6 +83,10 @@ func (f FuzzyMirror) scatter(r *Ray, hit *HitRec, c *Color, scattered *Ray) bool
 	(*scattered) = Ray{hit.point, reflected.add(randomUnitVector().scalarMult(f.fuzzy))}
 	*c = f.c
 	return scattered.dir.dot(hit.normal) > 0
+}
+
+func (f FuzzyMirror) emmited(u, v float64, p Vector) Color {
+	return Color{0, 0, 0}
 }
 
 type Matte struct {
@@ -78,6 +106,10 @@ func (m Matte) scatter(r *Ray, hit *HitRec, c *Color, scattered *Ray) bool {
 	return false
 }
 
+func (m Matte) emmited(u, v float64, p Vector) Color {
+	return Color{0, 0, 0}
+}
+
 type Mirror struct {
 	c Color
 }
@@ -89,6 +121,10 @@ func (m Mirror) scatter(r *Ray, hit *HitRec, c *Color, scattered *Ray) bool {
 	(*scattered) = Ray{hit.point, reflected}
 	*c = m.c
 	return scattered.dir.dot(hit.normal) > 0
+}
+
+func (m Mirror) emmited(u, v float64, p Vector) Color {
+	return Color{0, 0, 0}
 }
 
 func reflect(v Vector, n Vector) Vector {

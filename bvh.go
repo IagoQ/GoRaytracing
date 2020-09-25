@@ -8,10 +8,9 @@ import (
 // bvh definition
 
 type bvh struct {
-	shapes []Shape
-	left   *Shape
-	right  *Shape
-	box    boundingbox
+	left  *Shape
+	right *Shape
+	box   boundingbox
 }
 
 func CreateBvh(shapelist []Shape, start, end int) Shape {
@@ -30,11 +29,11 @@ func CreateBvh(shapelist []Shape, start, end int) Shape {
 		// sort shapes by random axis
 		axisr := rand.Float64()
 		if axisr < 0.33 {
-			sort.Slice(shapelist[start:end], func(i, j int) bool { return shapelist[i].bb().min.x < shapelist[j].bb().min.x })
+			sort.SliceStable(shapelist[start:end], func(i, j int) bool { return shapelist[i].bb().min.x < shapelist[j].bb().min.x })
 		} else if axisr < 0.66 {
-			sort.Slice(shapelist[start:end], func(i, j int) bool { return shapelist[i].bb().min.y < shapelist[j].bb().min.y })
+			sort.SliceStable(shapelist[start:end], func(i, j int) bool { return shapelist[i].bb().min.y < shapelist[j].bb().min.y })
 		} else {
-			sort.Slice(shapelist[start:end], func(i, j int) bool { return shapelist[i].bb().min.y < shapelist[j].bb().min.y })
+			sort.SliceStable(shapelist[start:end], func(i, j int) bool { return shapelist[i].bb().min.z < shapelist[j].bb().min.z })
 		}
 
 		mid := start + span/2
@@ -54,6 +53,7 @@ func (b bvh) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
 	}
 	lefthit := (*b.left).hit(r, rec, tmin, tmax)
 	righthit := (*b.right).hit(r, rec, tmin, tmax)
+
 	return lefthit || righthit
 }
 func (b bvh) bb() boundingbox {
@@ -78,6 +78,7 @@ func combinebb(b1, b2 boundingbox) boundingbox {
 }
 
 func (bb boundingbox) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
+
 	// x axis
 	invDet := 1.0 / r.dir.x
 	t0 := (bb.min.x - r.orig.x) * invDet
@@ -94,6 +95,7 @@ func (bb boundingbox) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
 	if tmax <= tmin {
 		return false
 	}
+
 	//y axis
 	invDet = 1.0 / r.dir.y
 	t0 = (bb.min.y - r.orig.y) * invDet
@@ -127,30 +129,5 @@ func (bb boundingbox) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
 		return false
 	}
 	return true
-
-	// ugly code, refactor wouldnt be too much prettier, open for better ideas
-	// var t0, t1 float64
-	// t0 = min(bb.min.x-(r.orig.x)/r.dir.x, bb.max.x-(r.orig.x)/r.dir.x)
-	// t1 = max(bb.min.x-(r.orig.x)/r.dir.x, bb.max.x-(r.orig.x)/r.dir.x)
-	// tmin = max(t0, tmin)
-	// tmax = max(t1, tmax)
-	// if tmin >= tmax {
-	// 	return false
-	// }
-	// t0 = min(bb.min.y-(r.orig.y)/r.dir.y, bb.max.y-(r.orig.y)/r.dir.y)
-	// t1 = max(bb.min.y-(r.orig.y)/r.dir.y, bb.max.y-(r.orig.y)/r.dir.y)
-	// tmin = max(t0, tmin)
-	// tmax = max(t1, tmax)
-	// if tmin >= tmax {
-	// 	return false
-	// }
-	// t0 = min(bb.min.z-(r.orig.z)/r.dir.z, bb.max.z-(r.orig.z)/r.dir.z)
-	// t1 = max(bb.min.z-(r.orig.z)/r.dir.z, bb.max.z-(r.orig.z)/r.dir.z)
-	// tmin = max(t0, tmin)
-	// tmax = max(t1, tmax)
-	// if tmin >= tmax {
-	// 	return false
-	// }
-	// return true
 
 }

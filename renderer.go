@@ -30,22 +30,25 @@ func render(s Scene) [][]Color {
 
 func raycolor(r Ray, s Shape, depth int) Color {
 	var hit HitRec
+	min, max := 0.001, 100.0
 
+	// bounce limit reached
 	if depth <= 0 {
+		return Color{0, 0, 0}
+	}
+
+	// didnt hit anything
+	if !s.hit(r, &hit, min, max) {
 		return Color{0, 0, 0}
 	}
 
 	var scattered Ray
 	var attenuation Color
-	min, max := 0.001, 100.0
-	if s.hit(r, &hit, min, max) {
-		if (*hit.material).scatter(&r, &hit, &attenuation, &scattered) {
-			return attenuation.mult(raycolor(scattered, s, depth-1))
-		}
-		return Color{0, 0, 0}
-	}
+	emmited := (*hit.material).emmited(hit.u, hit.v, hit.point)
 
-	unitdir := r.dir.normalize()
-	t := 0.5 * (unitdir.y + 1.0)
-	return Color{1, 1, 1}.scalarMult(t).add(Color{0.5, 0.7, 1.0}.scalarMult(1 - t))
+	if !(*hit.material).scatter(&r, &hit, &attenuation, &scattered) {
+		return emmited
+	}
+	return emmited.add(attenuation.mult(raycolor(scattered, s, depth-1)))
+
 }

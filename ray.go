@@ -6,7 +6,7 @@ type Ray struct {
 
 type HitRec struct {
 	point, normal Vector
-	t             float64
+	t, u, v       float64
 	front         bool
 	material      *Material
 }
