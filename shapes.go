@@ -70,12 +70,13 @@ func (tri Triangle) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
 }
 
 func (t Triangle) bb() boundingbox {
-	minx := min(t.p1.x, min(t.p2.x, t.p3.x))
-	miny := min(t.p1.y, min(t.p2.y, t.p3.y))
-	minz := min(t.p1.z, min(t.p2.z, t.p3.z))
-	maxx := max(t.p1.x, max(t.p2.x, t.p3.x))
-	maxy := max(t.p1.y, max(t.p2.y, t.p3.y))
-	maxz := max(t.p1.z, max(t.p2.z, t.p3.z))
+	// the wiggle room +- 0.00010 prevents some bugs with triangles that share points
+	minx := min(t.p1.x, min(t.p2.x, t.p3.x)) - 0.0001
+	miny := min(t.p1.y, min(t.p2.y, t.p3.y)) - 0.0001
+	minz := min(t.p1.z, min(t.p2.z, t.p3.z)) - 0.0001
+	maxx := max(t.p1.x, max(t.p2.x, t.p3.x)) + 0.0001
+	maxy := max(t.p1.y, max(t.p2.y, t.p3.y)) + 0.0001
+	maxz := max(t.p1.z, max(t.p2.z, t.p3.z)) + 0.0001
 	return boundingbox{Vector{minx, miny, minz}, Vector{maxx, maxy, maxz}}
 }
 
