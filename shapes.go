@@ -37,7 +37,7 @@ func (tri Triangle) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {
 	// }
 
 	// not culling
-	if math.Abs(det) < 0.00001 {
+	if math.Abs(det) < 0.0001 {
 		return false
 	}
 

@@ -18,23 +18,32 @@ func main() {
 	// defer stopprofile()
 
 	//scene
-	height := 200
-	width := 300
+	height := 1080
+	width := 1920
 	aspect := float64(width) / float64(height)
-	samples := 200
+	samples := 100
 	maxdepth := 2
-	from := Vector{10, 0, 0}
+	from := Vector{0, 10, 50}
 	to := Vector{0, 0, 0}
 
 	//multithreading
-	cores := 6
+	cores := 11
 	samplesPerRoutine := samples / cores
 
 	//camera
-	c := CreateCamera(aspect, 30.0, from, to, Vector{0, 1, 0}, 0.1, 10)
+	c := CreateCamera(aspect, 20.0, from, to, Vector{0, 1, 0}, 0.1, 50)
 
-	sl := createshapes()
-	w := CreateBvh(sl, 0, len(sl))
+	w, err := LoadShape("model.obj", Matte{
+		reflectance: 1,
+		c: Color{
+			r: 0,
+			g: 0.5,
+			b: 1,
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
 
 	inputChannel := make(chan Scene, cores)
 	outputChannel := make(chan [][]Color, cores)

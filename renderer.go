@@ -34,7 +34,7 @@ func raycolor(r Ray, s IShape, depth int) Color {
 
 	// bounce limit reached
 	if depth <= 0 {
-		return Color{0, 0, 0}
+		return Color{1, 1, 1}
 	}
 
 	// didnt hit anything
