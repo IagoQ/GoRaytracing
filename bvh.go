@@ -3,28 +3,30 @@ package main
 import (
 	"math/rand"
 	"sort"
+	"sync"
 )
 
 // bvh definition
 
 type bvh struct {
-	left  *Shape
-	right *Shape
+	left  *IShape
+	right *IShape
 	box   boundingbox
 }
 
-func CreateBvh(shapelist []Shape, start, end int) Shape {
+func CreateBvh(shapelist []IShape, start, end int) IShape {
 	b := bvh{}
 
 	span := end - start
 
-	if span == 1 {
+	switch span {
+	case 1:
 		b.left = &shapelist[start]
 		b.right = &shapelist[start]
-	} else if span == 2 {
+	case 2:
 		b.left = &shapelist[start]
 		b.right = &shapelist[start+1]
-	} else {
+	default:
 
 		// sort shapes by random axis
 		axisr := rand.Float64()
@@ -37,14 +39,25 @@ func CreateBvh(shapelist []Shape, start, end int) Shape {
 		}
 
 		mid := start + span/2
-		l := CreateBvh(shapelist, start, mid)
-		r := CreateBvh(shapelist, mid, end)
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+		var l, r IShape
+		go func() {
+			l = CreateBvh(shapelist, start, mid)
+			wg.Done()
+		}()
+		go func() {
+			r = CreateBvh(shapelist, mid, end)
+			wg.Done()
+		}()
+		wg.Wait()
 		b.left = &l
 		b.right = &r
 	}
 
 	b.box = combinebb((*b.left).bb(), (*b.right).bb())
 	return b
+
 }
 
 func (b bvh) hit(r Ray, rec *HitRec, tmin, tmax float64) bool {

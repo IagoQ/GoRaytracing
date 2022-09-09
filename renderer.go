@@ -6,7 +6,7 @@ import (
 
 type Scene struct {
 	width, height, samples, depth int
-	world                         Shape
+	world                         IShape
 	camera                        Camera
 }
 
@@ -28,7 +28,7 @@ func render(s Scene) [][]Color {
 	return canvas
 }
 
-func raycolor(r Ray, s Shape, depth int) Color {
+func raycolor(r Ray, s IShape, depth int) Color {
 	var hit HitRec
 	min, max := 0.001, 100.0
 
@@ -39,7 +39,7 @@ func raycolor(r Ray, s Shape, depth int) Color {
 
 	// didnt hit anything
 	if !s.hit(r, &hit, min, max) {
-		return Color{0, 0, 0}
+		return Color{1, 1, 1}
 	}
 
 	var scattered Ray

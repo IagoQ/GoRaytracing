@@ -4,7 +4,7 @@ import (
 	"math"
 )
 
-type Shape interface {
+type IShape interface {
 	hit(Ray, *HitRec, float64, float64) bool
 	bb() boundingbox
 }
